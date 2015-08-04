@@ -24,3 +24,4 @@ E:\c0d3\phan_mem_ql_ban_hang\bin\Debug\Quan_ly_ban_hang_giay_dep.accdb
 E:\c0d3\phan_mem_ql_ban_hang\bin\Debug\Quanlicuahanggiaydep.exe
 E:\c0d3\phan_mem_ql_ban_hang\bin\Debug\Quanlicuahanggiaydep.pdb
 >>>>>>> master
+E:\c0d3\phan_mem_ql_ban_hang\obj\Debug\Quanlicuahanggiaydep.csprojResolveAssemblyReference.cache
