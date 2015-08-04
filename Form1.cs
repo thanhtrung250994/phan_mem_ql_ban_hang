@@ -19,14 +19,25 @@ namespace Quanlicuahanggiaydep
         /// list lưu mã sản phẩm truy suất từ cơ sở dữ liệu
         /// </summary>
         public List<string> list_ma_sp = new List<string>();
-
+        /// <summary>
+        /// dictionary mã nhân viên &họ tên
+        /// </summary>
         public Dictionary<string, string> dictionary_ma_nv = new Dictionary<string, string>();
         /// <summary>
         /// Dictionary lưu mã sản phẩm và giá của sản phẩm đó
         /// </summary>
         public Dictionary<string, Int32> dictionary_sp = new Dictionary<string, Int32>();
-
-
+        /// <summary>
+        /// mã sản phẩm và số lượng hàng còn lại
+        /// </summary>
+        public Dictionary<string, Int32> dictionary_sp_soluong_before = new Dictionary<string, int>();
+        /// <summary>
+        /// mã sản phẩm và số lượng san phẩm sau khi in hóa đơn
+        /// </summary>
+        public Dictionary<string, Int32> dictionary_sp_soluong_after = new Dictionary<string, int>();
+        /// <summary>
+        /// Mã sản phẩm và số lượng bán được
+        /// </summary>
         public Dictionary<string, Int32> dictionary_sp_banchay = new Dictionary<string, int>();
         /// <summary>
         /// Đối tượng kết nối tới cớ sở dữ liệu
@@ -67,6 +78,7 @@ namespace Quanlicuahanggiaydep
                 {
                     list_ma_sp.Add(reader.GetString(0));
                     dictionary_sp.Add(reader.GetString(0), reader.GetInt32(6));
+                    dictionary_sp_soluong_after.Add(reader.GetString(0), reader.GetInt32(2));
                 }
                 con.Close();
                 con.Open();
@@ -91,32 +103,6 @@ namespace Quanlicuahanggiaydep
             dataGridView_nhanvien.RowHeadersVisible = false;
             dataGridView_taichinh_doanhthunv.RowHeadersVisible = false;
         }
-
-
-        /// <summary>
-        /// Hàm này có chức năng dăng nhập(truy xuất từ bảng cơ sở dữ liêu access)
-        /// Ma_nv_login tương ứng với mã số nhân viên
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        //private void btn_ql_khachhang_Click(object sender, EventArgs e)
-        //{
-        //    OleDbCommand command = new OleDbCommand();
-        //    command.Connection = con;
-        //    con.Open();
-        //    command.CommandText = "select * from Khach_hang ";
-        //    OleDbDataReader reader = command.ExecuteReader();
-        //    DataTable table = new DataTable();
-        //    table.Columns.Add("Mã khách hàng", typeof(string));
-        //    table.Columns.Add("Tên khách hàng", typeof(string));
-        //    table.Columns.Add("Điểm", typeof(string));
-        //    while (reader.Read())
-        //    {
-        //        table.Rows.Add(reader.GetString(0).ToString(), reader.GetString(1).ToString(), reader.GetInt32(2).ToString());
-        //    }
-        //    dataGridView_banhang.DataSource = table;
-        //    con.Close();
-        //}
 
         private void btn_ql_nv_Click(object sender, EventArgs e)
         {
@@ -343,6 +329,12 @@ namespace Quanlicuahanggiaydep
             {
                 Int32 diem = Diem_khach_hang + sum / 100000;
                 doanh_thu_cua_nv_dang_dang_nhap += sum;
+                int ij=0;
+                while(ij<dataGridView_banhang.RowCount-2)
+                {
+                    dictionary_sp_soluong_after.Add(dataGridView_banhang.Rows[ij].Cells[1].ToString(), (dictionary_sp_soluong_after.First(u => u.Key == dataGridView_banhang.Rows[ij].Cells[1].ToString()).Value) - int.Parse(dataGridView_banhang.Rows[ij].Cells[3].ToString()));
+                    ij++;
+                }
                 OleDbCommand command = new OleDbCommand();
                 command.Connection = con;
                 con.Open();
@@ -350,12 +342,24 @@ namespace Quanlicuahanggiaydep
                 command.ExecuteNonQuery();
                 command.CommandText = @"UPDATE Nhan_vien SET Doanh_thu=" + doanh_thu_cua_nv_dang_dang_nhap + " where Ma_nv='" + Ma_nv_login + "'";
                 command.ExecuteNonQuery();
-                int i = 0;
-                while (i < dataGridView_banhang.RowCount - 2)
+                foreach(string sp in dictionary_sp_soluong_after.Keys)
                 {
-                    command.CommandText = @"insert into Ghi_vet_ban_hang (ngay_ban,Ma_nv,Ma_kh,Ma_sp,So_luong) values ('" + lb_ql_banhang_date.Text + "','" + Ma_nv_login + "','" + MKH + "','" + dataGridView_banhang.Rows[i].Cells[1].Value.ToString() + "'," + Int32.Parse(dataGridView_banhang.Rows[i].Cells[3].Value.ToString()) + ")";
-                    i++;
-                    command.ExecuteNonQuery();
+                command.CommandText = @"UPDATE thong_tin_sp SET So_luong =" + dictionary_sp_soluong_after.First(u=>u.Key==sp).Value + " where Ma_SP='" + sp + "'";
+                command.ExecuteNonQuery();
+                }
+                int i = 0;
+                try
+                {
+                    while (i < dataGridView_banhang.RowCount - 2)
+                    {
+                        command.CommandText = @"insert into Ghi_vet_ban_hang (ngay_ban,Ma_nv,Ma_kh,Ma_sp,So_luong) values ('" + lb_ql_banhang_date.Text + "','" + Ma_nv_login + "','" + MKH + "','" + dataGridView_banhang.Rows[i].Cells[1].Value.ToString() + "'," + Int32.Parse(dataGridView_banhang.Rows[i].Cells[3].Value.ToString()) + ")";
+                        i++;
+                        command.ExecuteNonQuery();
+                    }
+                }
+                catch(Exception exa)
+                {
+                    MessageBox.Show(exa.ToString());
                 }
                 con.Close();
                 dataGridView_banhang.Rows.Clear();
@@ -405,7 +409,7 @@ namespace Quanlicuahanggiaydep
                         if (reader.GetInt32(3).ToString() == cb_ql_sanpham_size.Text)
                             dataGridView_sanpham.Rows.Add(reader.GetString(0).ToString(),
                             reader.GetDateTime(1).ToString(),
-                            reader.GetInt32(2).ToString(),
+                            reader.GetInt32(2).ToString(),//số lượng còn lại
                             reader.GetInt32(3).ToString(),
                             reader.GetString(4).ToString(),
                             reader.GetString(5).ToString(),
