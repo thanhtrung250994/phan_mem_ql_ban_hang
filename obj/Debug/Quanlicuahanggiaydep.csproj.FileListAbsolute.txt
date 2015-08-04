@@ -11,3 +11,6 @@ E:\c0d3\Visual2013\c#\Quanlicuahanggiaydep\obj\Debug\Quanlicuahanggiaydep.login.
 E:\c0d3\phan_mem_quan_li_ban_hang\Quanlicuahanggiaydep\bin\Debug\Quanlicuahanggiaydep.exe.config
 E:\c0d3\phan_mem_quan_li_ban_hang\Quanlicuahanggiaydep\obj\Debug\Quanlicuahanggiaydep.exe
 E:\c0d3\phan_mem_quan_li_ban_hang\Quanlicuahanggiaydep\obj\Debug\Quanlicuahanggiaydep.pdb
+E:\c0d3\phan_mem_ql_ban_hang\bin\Debug\Quanlicuahanggiaydep.exe.config
+E:\c0d3\phan_mem_ql_ban_hang\obj\Debug\Quanlicuahanggiaydep.exe
+E:\c0d3\phan_mem_ql_ban_hang\obj\Debug\Quanlicuahanggiaydep.pdb
