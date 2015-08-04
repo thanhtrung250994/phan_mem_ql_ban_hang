@@ -11,6 +11,10 @@ namespace Quanlicuahanggiaydep
     /// </summary>
     class thiet_bi_ngoai_vi
     {
+<<<<<<< HEAD
         
+=======
+        string a;
+>>>>>>> master
     }
 }

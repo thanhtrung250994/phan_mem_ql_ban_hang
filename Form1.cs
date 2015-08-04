@@ -19,14 +19,25 @@ namespace Quanlicuahanggiaydep
         /// list lưu mã sản phẩm truy suất từ cơ sở dữ liệu
         /// </summary>
         public List<string> list_ma_sp = new List<string>();
-
+        /// <summary>
+        /// dictionary mã nhân viên &họ tên
+        /// </summary>
         public Dictionary<string, string> dictionary_ma_nv = new Dictionary<string, string>();
         /// <summary>
         /// Dictionary lưu mã sản phẩm và giá của sản phẩm đó
         /// </summary>
         public Dictionary<string, Int32> dictionary_sp = new Dictionary<string, Int32>();
-
-
+        /// <summary>
+        /// mã sản phẩm và số lượng hàng còn lại
+        /// </summary>
+        public Dictionary<string, Int32> dictionary_sp_soluong_before = new Dictionary<string, int>();
+        /// <summary>
+        /// mã sản phẩm và số lượng san phẩm sau khi in hóa đơn
+        /// </summary>
+        public Dictionary<string, Int32> dictionary_sp_soluong_after = new Dictionary<string, int>();
+        /// <summary>
+        /// Mã sản phẩm và số lượng bán được
+        /// </summary>
         public Dictionary<string, Int32> dictionary_sp_banchay = new Dictionary<string, int>();
         /// <summary>
         /// Đối tượng kết nối tới cớ sở dữ liệu
@@ -67,6 +78,7 @@ namespace Quanlicuahanggiaydep
                 {
                     list_ma_sp.Add(reader.GetString(0));
                     dictionary_sp.Add(reader.GetString(0), reader.GetInt32(6));
+                    dictionary_sp_soluong_after.Add(reader.GetString(0), reader.GetInt32(2));
                 }
                 con.Close();
                 con.Open();
@@ -91,32 +103,6 @@ namespace Quanlicuahanggiaydep
             dataGridView_nhanvien.RowHeadersVisible = false;
             dataGridView_taichinh_doanhthunv.RowHeadersVisible = false;
         }
-
-
-        /// <summary>
-        /// Hàm này có chức năng dăng nhập(truy xuất từ bảng cơ sở dữ liêu access)
-        /// Ma_nv_login tương ứng với mã số nhân viên
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        //private void btn_ql_khachhang_Click(object sender, EventArgs e)
-        //{
-        //    OleDbCommand command = new OleDbCommand();
-        //    command.Connection = con;
-        //    con.Open();
-        //    command.CommandText = "select * from Khach_hang ";
-        //    OleDbDataReader reader = command.ExecuteReader();
-        //    DataTable table = new DataTable();
-        //    table.Columns.Add("Mã khách hàng", typeof(string));
-        //    table.Columns.Add("Tên khách hàng", typeof(string));
-        //    table.Columns.Add("Điểm", typeof(string));
-        //    while (reader.Read())
-        //    {
-        //        table.Rows.Add(reader.GetString(0).ToString(), reader.GetString(1).ToString(), reader.GetInt32(2).ToString());
-        //    }
-        //    dataGridView_banhang.DataSource = table;
-        //    con.Close();
-        //}
 
         private void btn_ql_nv_Click(object sender, EventArgs e)
         {
@@ -289,7 +275,7 @@ namespace Quanlicuahanggiaydep
         /// <param name="e"></param>
         private void btn_ql_banhang_ok_Click(object sender, EventArgs e)
         {
-            if (tb_ql_banhang_soluong.Text != ""&&tb_ql_banhang_tenkhachhang.Text!=""&&cb_ql_banhang_masanpham.Text!="")
+            if (tb_ql_banhang_soluong.Text != "" && tb_ql_banhang_tenkhachhang.Text != "" && cb_ql_banhang_masanpham.Text != "")
             {
                 try
                 {
@@ -339,27 +325,47 @@ namespace Quanlicuahanggiaydep
 
         private void btn_inhoadon_Click(object sender, EventArgs e)
         {
-            if (tb_ql_banhang_tenkhachhang.Text != "" && dataGridView_banhang.RowCount > 2 && tb_ql_banhang_tenkhachhang.Text == MKH)
+            try
             {
-                Int32 diem = Diem_khach_hang + sum / 100000;
-                doanh_thu_cua_nv_dang_dang_nhap += sum;
-                OleDbCommand command = new OleDbCommand();
-                command.Connection = con;
-                con.Open();
-                command.CommandText = @"update Khach_hang set Diem=" + diem + " where MA_khachhang='" + MKH + "'";
-                command.ExecuteNonQuery();
-                command.CommandText = @"UPDATE Nhan_vien SET Doanh_thu=" + doanh_thu_cua_nv_dang_dang_nhap + " where Ma_nv='" + Ma_nv_login + "'";
-                command.ExecuteNonQuery();
-                int i = 0;
-                while (i < dataGridView_banhang.RowCount - 2)
+                if (tb_ql_banhang_tenkhachhang.Text != "" && dataGridView_banhang.RowCount > 2 && tb_ql_banhang_tenkhachhang.Text == MKH)
                 {
-                    command.CommandText = @"insert into Ghi_vet_ban_hang (ngay_ban,Ma_nv,Ma_kh,Ma_sp,So_luong) values ('" + lb_ql_banhang_date.Text + "','" + Ma_nv_login + "','" + MKH + "','" + dataGridView_banhang.Rows[i].Cells[1].Value.ToString() + "'," + Int32.Parse(dataGridView_banhang.Rows[i].Cells[3].Value.ToString()) + ")";
-                    i++;
+                    Int32 diem = Diem_khach_hang + sum / 100000;
+                    doanh_thu_cua_nv_dang_dang_nhap += sum;
+                    int ij = 0;
+                    while (ij < dataGridView_banhang.RowCount - 2)
+                    {
+                        dictionary_sp_soluong_after.Add(dataGridView_banhang.Rows[ij].Cells[1].ToString(), (dictionary_sp_soluong_after.First(u => u.Key == dataGridView_banhang.Rows[ij].Cells[1].ToString()).Value) - int.Parse(dataGridView_banhang.Rows[ij].Cells[3].ToString()));
+                        ij++;
+                    }
+                    OleDbCommand command = new OleDbCommand();
+                    command.Connection = con;
+                    con.Open();
+                    command.CommandText = @"update Khach_hang set Diem=" + diem + " where MA_khachhang='" + MKH + "'";
                     command.ExecuteNonQuery();
+                    command.CommandText = @"UPDATE Nhan_vien SET Doanh_thu=" + doanh_thu_cua_nv_dang_dang_nhap + " where Ma_nv='" + Ma_nv_login + "'";
+                    command.ExecuteNonQuery();
+                    foreach (string sp in dictionary_sp_soluong_after.Keys)
+                    {
+                        command.CommandText = @"UPDATE thong_tin_sp SET So_luong =" + dictionary_sp_soluong_after.First(u => u.Key == sp).Value + " where Ma_SP='" + sp + "'";
+                        command.ExecuteNonQuery();
+                    }
+                    int i = 0;
+
+                    while (i < dataGridView_banhang.RowCount - 2)
+                    {
+                        command.CommandText = @"insert into Ghi_vet_ban_hang (ngay_ban,Ma_nv,Ma_kh,Ma_sp,So_luong) values ('" + lb_ql_banhang_date.Text + "','" + Ma_nv_login + "','" + MKH + "','" + dataGridView_banhang.Rows[i].Cells[1].Value.ToString() + "'," + Int32.Parse(dataGridView_banhang.Rows[i].Cells[3].Value.ToString()) + ")";
+                        i++;
+                        command.ExecuteNonQuery();
+                    }
+
+                    con.Close();
+                    dataGridView_banhang.Rows.Clear();
+                    tb_ql_banhang_tenkhachhang.Text = "";
                 }
-                con.Close();
-                dataGridView_banhang.Rows.Clear();
-                tb_ql_banhang_tenkhachhang.Text = "";
+            }
+            catch (Exception exa)
+            {
+                MessageBox.Show(exa.ToString());
             }
             if (tb_ql_banhang_tenkhachhang.Text != "" && dataGridView_banhang.RowCount > 2 && tb_ql_banhang_tenkhachhang.Text != MKH)
             {
@@ -405,7 +411,7 @@ namespace Quanlicuahanggiaydep
                         if (reader.GetInt32(3).ToString() == cb_ql_sanpham_size.Text)
                             dataGridView_sanpham.Rows.Add(reader.GetString(0).ToString(),
                             reader.GetDateTime(1).ToString(),
-                            reader.GetInt32(2).ToString(),
+                            reader.GetInt32(2).ToString(),//số lượng còn lại
                             reader.GetInt32(3).ToString(),
                             reader.GetString(4).ToString(),
                             reader.GetString(5).ToString(),
@@ -463,7 +469,7 @@ namespace Quanlicuahanggiaydep
                 if (cb_ql_taichinh_timenam.Text != "" && cb_ql_taichinh_timethang.Text != "")
                 {
                     //string time="1/8/2015";// = ("/" + cb_ql_taichinh_timethang.Text + "/" + cb_ql_taichinh_timenam.Text).ToString();
-                   
+
                     //OleDbDataReader reader;
                     if (cb_ql_taichinh_options.Text == "Nhân viên")
                     {
@@ -502,28 +508,28 @@ namespace Quanlicuahanggiaydep
                         con.Open();
                         foreach (string SP in dictionary_sp.Keys)
                         {
-                           
-                                command.CommandText = "select * from Ghi_vet_ban_hang where Ma_sp = '" + SP + "'";
-                                OleDbDataReader reader = command.ExecuteReader();
-                                int sum = 0;
-                                while (reader.Read())
+
+                            command.CommandText = "select * from Ghi_vet_ban_hang where Ma_sp = '" + SP + "'";
+                            OleDbDataReader reader = command.ExecuteReader();
+                            int sum = 0;
+                            while (reader.Read())
+                            {
+                                string[] subdate = reader.GetDateTime(1).ToString().Split('/');
+                                if (subdate[1] == cb_ql_taichinh_timethang.Text && subdate[2].Substring(0, 4) == cb_ql_taichinh_timenam.Text)
                                 {
-                                    string[] subdate = reader.GetDateTime(1).ToString().Split('/');
-                                    if (subdate[1] == cb_ql_taichinh_timethang.Text && subdate[2].Substring(0, 4) == cb_ql_taichinh_timenam.Text)
-                                    {
-                                        sum += reader.GetInt32(5);
-                                    }
+                                    sum += reader.GetInt32(5);
                                 }
-                                Debug.WriteLine("in rarararararar");
-                                reader.Close();
-                                dictionary_sp_banchay.Add(SP, sum);
-                           
+                            }
+                            Debug.WriteLine("in rarararararar");
+                            reader.Close();
+                            dictionary_sp_banchay.Add(SP, sum);
+
                         }
                         con.Close();
                         int i = 0;
                         int[] arr_sp = dictionary_sp_banchay.Values.ToArray();
                         int count = dictionary_sp_banchay.Count();
-                        while (i < 5 && i<count)
+                        while (i < 5 && i < count)
                         {
                             int max = 0;
                             foreach (int sp in arr_sp)
@@ -533,11 +539,11 @@ namespace Quanlicuahanggiaydep
                             }
                             try
                             {
-                                if(max!=0)
-                                dataGridView_taichinh_spbanchay.Rows.Add(dictionary_sp_banchay.First(u => u.Value == max).Key.ToString(), max);
+                                if (max != 0)
+                                    dataGridView_taichinh_spbanchay.Rows.Add(dictionary_sp_banchay.First(u => u.Value == max).Key.ToString(), max);
                             }
                             catch { }
-                                for (int j = 0; j < count; j++)
+                            for (int j = 0; j < count; j++)
                             {
                                 if (arr_sp[j] == max)
                                     arr_sp[j] = 0;
